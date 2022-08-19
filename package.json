@@ -1,12 +1,18 @@
 {
   "name": "@crimson-education/client-sqs-extended",
-  "version": "0.1.0",
+  "version": "1.0.1",
   "description": "Extended SQS client library for managing large AWS SQS message payloads using S3",
   "author": "Ian Wang, DVLA, Crimson Education",
   "license": "MIT",
   "main": "lib/index.js",
+  "files": [
+    "lib"
+  ],
   "scripts": {
-    "build": "rimraf lib && tsc",
+    "prepack": "npm run build",
+    "clean": "rimraf lib",
+    "prebuild": "npm run clean",
+    "build": "tsc",
     "lint": "eslint src",
     "fixlint": "npm run lint -- --fix",
     "just-test": "jest",
