@@ -1,30 +1,34 @@
 {
-    "name": "sqs-extended-client",
-    "version": "0.1.0",
-    "description": "Extended SQS client library for managing large AWS SQS message payloads using S3",
-    "author": "Ian Wang, DVLA",
-    "license": "MIT",
-    "homepage": "https://github.com/dvla/sqs-extended-client",
-    "main": "src/ExtendedSqsClient",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/dvla/sqs-extended-client.git"
-    },
-    "scripts": {
-        "test": "jest --testPathPattern='src/.*'",
-        "system-test": "jest --testPathPattern='system-test/.*'"
-    },
-    "dependencies": {
-        "uuid": "^3.4.0"
-    },
-    "devDependencies": {
-        "aws-sdk": "^2.725.0",
-        "jest-cli": "^25.1.0"
-    },
-    "jest": {
-        "testEnvironment": "node"
-    },
-    "directories": {
-        "test": "__test__"
-    }
+  "name": "@crimson-education/client-sqs-extended",
+  "version": "0.1.0",
+  "description": "Extended SQS client library for managing large AWS SQS message payloads using S3",
+  "author": "Ian Wang, DVLA, Crimson Education",
+  "license": "MIT",
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "rimraf lib && tsc",
+    "lint": "eslint src",
+    "fixlint": "npm run lint -- --fix",
+    "just-test": "jest",
+    "test": "npm run lint && npm run just-test"
+  },
+  "dependencies": {
+    "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.18.2",
+    "@babel/preset-typescript": "^7.17.12",
+    "@crimson-education/eslint-config": "^3.1.0",
+    "@types/aws-sdk": "^2.7.0",
+    "@types/jest": "^27.5.1",
+    "@types/uuid": "^8.3.4",
+    "aws-sdk-client-mock": "^0.6.2",
+    "jest": "^28.1.0",
+    "rimraf": "^3.0.2",
+    "typescript": "^4.6.4"
+  },
+  "peerDependencies": {
+    "@aws-sdk/client-s3": "^3.21.0",
+    "@aws-sdk/client-sqs": "^3.21.0"
+  }
 }

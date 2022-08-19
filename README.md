@@ -7,21 +7,22 @@ A library for managing large AWS SQS message payloads using S3. In particular it
 To install the SQS Extended Client run:
 
 ```
-npm install sqs-extended-client
+npm install @crimson-education/client-sqs-extended
 ```
 
 ## Usage
 
 The SQS Extended Client wraps supplied SQS and S3 instances from the AWS SDK. In order to send messages a `bucketName` is required, which is the S3 bucket where the message payloads will be stored:
 
-```Javascript
-const AWS = require('aws-sdk');
-const SqsExtendedClient = require('sqs-extended-client');
+```ts
+import { SQS } from '@aws-sdk/client-sqs';
+import { S3 } from '@aws-sdk/client-s3';
+import { SQSExtended } from '@crimson-education/client-sqs-extended';
 
-const sqs = new AWS.SQS({ /* your SQS configuration */ });
-const s3 = new AWS.S3({ /* your S3 configuration */ });
+const sqs = new SQS({ /* your SQS configuration */ });
+const s3 = new S3({ /* your S3 configuration */ });
 
-const sqsExtendedClient = new SqsExtendedClient(sqs, s3,
+const sqsExtended = new SQSExtended(sqs, s3,
     {
         bucketName: '/* your bucket name */' // required for send message
         // other configuration options
@@ -30,7 +31,7 @@ const sqsExtendedClient = new SqsExtendedClient(sqs, s3,
 ```
 
 The SQS Extended Client is used exactly as an SQS instance from the AWS SDK. It supports all the message level functions, and both promise() and callbacks:
-```Javascript
+```ts
 changeMessageVisibility()
 changeMessageVisibilityBatch()
 deleteMessage()
@@ -40,7 +41,7 @@ sendMessageBatch()
 receiveMessage()
 
 // e.g.
-const response = await sqsExtendedClient.receiveMessage({
+const response = await sqsExtended.receiveMessage({
     QueueUrl: queueUrl,
 }).promise();
 ```
@@ -85,7 +86,7 @@ const receiveTransform = (sqsMessage, s3Content) => ({
     largeItem: s3Content,
 });
 
-const sqsExtendedClient = new SqsExtendedClient(sqs, s3,
+const sqsExtended = new SQSExtended(sqs, s3,
     {
         bucketName: '/* your bucket name */',
         sendTransform,
@@ -100,10 +101,10 @@ If using [Middy](https://github.com/middyjs/middy) middleware with AWS Lambda th
 
 ```Javascript
 const middy = require('@middy/core');
-const SqsExtendedClient = require('sqs-extended-client');
+const SQSExtended = require('sqs-extended-client');
 
 const handler = middy(/* Lambda event handler */)
-    .use(new SqsExtendedClient(sqs, s3).middleware());
+    .use(new SQSExtended(sqs, s3).middleware());
 ```
 
 ## Test
@@ -113,12 +114,6 @@ To execute the unit tests run:
 ```
 npm install
 npm run test
-```
-
-The system tests require AWS Localstack to be installed and started. The system tests can then be run using:
-
-```
-npm run system-test
 ```
 
 ## License
