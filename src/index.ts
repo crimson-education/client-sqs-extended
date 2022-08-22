@@ -9,6 +9,7 @@ import {
 } from '@aws-sdk/client-sqs';
 import { S3 } from '@aws-sdk/client-s3';
 import { Readable } from 'stream';
+import { SQSEvent } from 'aws-lambda';
 
 export type callbackFnType = (...args: any[]) => void;
 export type preRequestFuncType = () => any;
@@ -129,7 +130,9 @@ export class SQSExtended {
     return (response: ReceiveMessageResult) =>
       Promise.all(
         (response.Messages || []).map(async (message) => {
-          const { bucketName, s3MessageKey } = getS3MessageKeyAndBucket(message);
+          const { bucketName, s3MessageKey } = getS3MessageKeyAndBucket(
+            message.MessageAttributes?.[S3_MESSAGE_BODY_KEY]?.StringValue,
+          );
 
           if (s3MessageKey) {
             /* eslint-disable-next-line no-param-reassign */
@@ -178,6 +181,33 @@ export class SQSExtended {
       request,
       callback,
       invokeFnBeforeRequest(request, () => this._deleteS3Content(bucketName, s3MessageKey)),
+    );
+  }
+
+  checkEvent(event: SQSEvent) {
+    return Promise.all(
+      event.Records.map(async (record) => {
+        const { bucketName, s3MessageKey } = getS3MessageKeyAndBucket(
+          record.messageAttributes?.[S3_MESSAGE_BODY_KEY]?.stringValue,
+        );
+        if (s3MessageKey) {
+          const s3Content = await this._getS3Content(bucketName, s3MessageKey);
+          record.body = s3Content || record.body;
+        }
+      }),
+    );
+  }
+
+  eventSucceeded(event: SQSEvent) {
+    return Promise.all(
+      event.Records.map(async (record) => {
+        const { bucketName, s3MessageKey } = getS3MessageKeyAndBucket(
+          record.messageAttributes?.[S3_MESSAGE_BODY_KEY]?.stringValue,
+        );
+        if (s3MessageKey) {
+          await this._deleteS3Content(bucketName, s3MessageKey);
+        }
+      }),
     );
   }
 }
@@ -230,25 +260,15 @@ function defaultReceiveTransform() {
   };
 }
 
-function getS3MessageKeyAndBucket(message: Message) {
-  const messageAttributes = message.MessageAttributes || {};
-
-  if (!messageAttributes[S3_MESSAGE_BODY_KEY]) {
+function getS3MessageKeyAndBucket(s3MessageKey: string | undefined) {
+  if (!s3MessageKey) {
     return {
       bucketName: null,
       s3MessageKey: null,
     };
   }
 
-  const s3MessageKeyAttr = messageAttributes[S3_MESSAGE_BODY_KEY];
-  const s3MessageKey = s3MessageKeyAttr.StringValue;
-
-  if (!s3MessageKey) {
-    throw new Error(`Invalid ${S3_MESSAGE_BODY_KEY} message attribute: Missing stringValue/StringValue`);
-  }
-
   const s3MessageKeyRegexMatch = s3MessageKey.match(/^\((.*)\)(.*)?/);
-
   if (s3MessageKeyRegexMatch) {
     return {
       bucketName: s3MessageKeyRegexMatch[1],

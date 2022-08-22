@@ -1,6 +1,6 @@
 {
   "name": "@crimson-education/client-sqs-extended",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Extended SQS client library for managing large AWS SQS message payloads using S3",
   "author": "Ian Wang, DVLA, Crimson Education",
   "license": "MIT",
@@ -25,6 +25,7 @@
     "@babel/preset-env": "^7.18.2",
     "@babel/preset-typescript": "^7.17.12",
     "@crimson-education/eslint-config": "^3.1.0",
+    "@types/aws-lambda": "^8.10.102",
     "@types/aws-sdk": "^2.7.0",
     "@types/jest": "^27.5.1",
     "@types/uuid": "^8.3.4",

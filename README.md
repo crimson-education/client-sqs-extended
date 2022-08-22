@@ -30,7 +30,23 @@ const sqsExtended = new SQSExtended(sqs, s3,
 );
 ```
 
+When receiving messages in an AWS Lambda Listener, you can call `checkEvent` on the event parameter to check if the event is a SQS Extended message, and fetch the expected body.
+
+Once your Lambda succeeds, you will want to call `eventSucceeded`, which will then go and delete the extended data from S3.
+
+```ts
+export const handleSQS: Handler<SQSEvent> = async (event) => {
+  await sqsExtended.checkEvent(event);
+
+  // do something with the event
+  console.log(event);
+
+  await sqsExtended.eventSucceeded(event);
+};
+```
+
 The SQS Extended Client is used exactly as an SQS instance from the AWS SDK. It supports all the message level functions, and both promise() and callbacks:
+
 ```ts
 changeMessageVisibility()
 changeMessageVisibilityBatch()
