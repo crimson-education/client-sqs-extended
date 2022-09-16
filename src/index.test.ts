@@ -107,7 +107,7 @@ describe('SQSExtended receiveMessage', () => {
     const sqsMock = mockClient(sqs);
     sqsMock.on(ReceiveMessageCommand).resolves(messages);
 
-    const client = new SQSExtended(sqs, s3, {});
+    const client = new SQSExtended(sqs, s3, { bucketName: '' });
 
     // When
     const response = await client.receiveMessage({
@@ -152,7 +152,7 @@ describe('SQSExtended receiveMessage', () => {
     sqsMock.on(ReceiveMessageCommand).resolves(messages);
     s3Mock.on(GetObjectCommand).resolves(s3Content);
 
-    const client = new SQSExtended(sqs, s3, {});
+    const client = new SQSExtended(sqs, s3, { bucketName: '' });
 
     // When
     const response = await client.receiveMessage({

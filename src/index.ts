@@ -14,6 +14,20 @@ import { SQSEvent } from 'aws-lambda';
 export type callbackFnType = (...args: any[]) => void;
 export type preRequestFuncType = () => any;
 export type postRequestFuncType = (...args: any[]) => any;
+type SendTransform = (messageSend: SendMessageRequest) => {
+  s3Content: string | null | undefined;
+  messageBody: string | null | undefined;
+};
+type ReceiveTransform = (mesasgeRecv: Message, s3Content?: string) => string | undefined;
+
+type LogMethod = (message: string, metadata?: any) => void;
+export interface ILogger {
+  debug: LogMethod;
+  info: LogMethod;
+  warn: LogMethod;
+  error: LogMethod;
+  child: (metadata: any) => ILogger;
+}
 
 const DEFAULT_MESSAGE_SIZE_THRESHOLD = 262144;
 const S3_MESSAGE_KEY_MARKER = '-..s3Key..-';
@@ -24,14 +38,29 @@ export class SQSExtended {
   sqs: SQS;
   s3: S3;
   bucketName: string;
-  sendTransform: (messageSend: SendMessageRequest) => { s3Content: string; messageBody: string };
-  receiveTransform: (mesasgeRecv: Message, s3Content?: string) => string;
+  sendTransform: SendTransform;
+  receiveTransform: ReceiveTransform;
+  logger: ILogger | undefined;
   static RESERVED_ATTRIBUTE_NAME: string = S3_MESSAGE_BODY_KEY;
 
-  constructor(sqs: SQS, s3: S3, options: any) {
+  constructor(
+    sqs: SQS,
+    s3: S3,
+    options: {
+      bucketName: string;
+      alwaysUseS3?: boolean;
+      messageSizeThreshold?: number;
+      sendTransform?: SendTransform;
+      receiveTransform?: ReceiveTransform;
+      logger?: ILogger;
+    },
+  ) {
     this.sqs = sqs;
     this.s3 = s3;
     this.bucketName = options.bucketName;
+    this.logger = options.logger?.child({
+      from: 'SQSExtended',
+    });
 
     this.sendTransform =
       options.sendTransform || defaultSendTransform(options.alwaysUseS3, options.messageSizeThreshold);
@@ -65,6 +94,7 @@ export class SQSExtended {
       Key: key,
     };
 
+    this.logger?.info(`Retrieving Extended Message from S3 for key ${key} and bucket ${bucketName}`, params);
     const object = await this.s3.getObject(params);
     return this._streamToString(object.Body);
   }
@@ -77,6 +107,7 @@ export class SQSExtended {
       Key: key,
     };
 
+    this.logger?.info(`Deleting Extended Message from S3 for key ${key} and bucket ${bucketName}`, params);
     return this.s3.deleteObject(params);
   }
 
@@ -122,7 +153,7 @@ export class SQSExtended {
     return wrapRequest(
       request,
       callback,
-      invokeFnBeforeRequest(request, () => this._storeS3Content(s3MessageKey, s3Content)),
+      invokeFnBeforeRequest(request, () => this._storeS3Content(s3MessageKey, s3Content!)),
     ).promise();
   }
 
@@ -243,7 +274,7 @@ function isLarge(message: SendMessageRequest, messageSizeThreshold = DEFAULT_MES
   return messageAttributeSize + bodySize > messageSizeThreshold;
 }
 
-function defaultSendTransform(alwaysUseS3: boolean, messageSizeThreshold: number) {
+function defaultSendTransform(alwaysUseS3?: boolean, messageSizeThreshold?: number) {
   return (message: SendMessageRequest) => {
     const useS3 = alwaysUseS3 || isLarge(message, messageSizeThreshold);
 
